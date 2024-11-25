@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade</title>
+</head>
+<body>
+    <h1>Trade Stocks</h1>
+    <form method="POST">
+        <label for="stock">Stock Name:</label>
+        <input type="text" name="stock" required>
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" required>
+        <label for="price">Price per Stock:</label>
+        <input type="number" step="0.01" name="price" required>
+        <label for="type">Type:</label>
+        <select name="type">
+            <option value="BUY">Buy</option>
+            <option value="SELL">Sell</option>
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+    <a href="{{ url_for('account') }}">Back to Account</a>
+</body>
+</html>

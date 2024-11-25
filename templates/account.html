@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+</head>
+<body>
+    <h1>Welcome to your account!</h1>
+
+    <h3>Your current balance: ${{ balance }}</h3>
+    
+    <h4>Your Stocks:</h4>
+    <ul>
+        {% if stocks %}
+            {% for stock in stocks %}
+                <li>{{ stock['stock'] }}: {{ stock['quantity'] }} shares</li>
+            {% endfor %}
+        {% else %}
+            <p>You have no stocks in your portfolio.</p>
+        {% endif %}
+    </ul>
+
+    <a href="{{ url_for('trade') }}">Go to Trading</a>
+
+</body>
+</html>
