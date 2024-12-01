@@ -7,20 +7,78 @@
 </head>
 <body>
     <h1>Trade Stocks</h1>
+
+    <!-- 顯示閃存訊息 -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flash-messages" style="color: red; list-style: none;">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <!-- 股票資訊顯示 -->
+    {% if stock_info %}
+        <h2>Stock Information</h2>
+        <p><strong>Name:</strong> {{ stock_info['name'] }}</p>
+        <p><strong>Symbol:</strong> {{ stock_info['symbol'] }}</p>
+        <p><strong>Sector:</strong> {{ stock_info['sector'] }}</p>
+        <p><strong>Market Cap:</strong> {{ stock_info['market_cap'] }}</p>
+        <p><strong>Current Price:</strong> {{ stock_info['current_price'] }}</p>
+    {% else %}
+        <p>No stock information available. Please search for a stock symbol.</p>
+    {% endif %}
+
+    <!-- 股票查詢表單 -->
     <form method="POST">
         <label for="stock">Stock Name:</label>
-        <input type="text" name="stock" required>
-        <label for="quantity">Quantity:</label>
-        <input type="number" name="quantity" required>
-        <label for="price">Price per Stock:</label>
-        <input type="number" step="0.01" name="price" required>
-        <label for="type">Type:</label>
-        <select name="type">
-            <option value="BUY">Buy</option>
-            <option value="SELL">Sell</option>
-        </select>
-        <button type="submit">Submit</button>
+        <input type="text" name="stock" required placeholder="Enter 4-digit Taiwan stock code">
+        <button type="submit" name="get_stock_info">Get Stock Info</button>
+        <p style="font-size: 0.9em; color: gray;">Only 4-digit Taiwan stock codes are supported (e.g., 2330).</p>
     </form>
+
+    <!-- 交易表單 -->
+    {% if stock_info %}
+        <form method="POST">
+            <input type="hidden" name="stock" value="{{ stock_info['symbol'] }}">
+            
+            <!-- 交易類型 -->
+            <label for="type">Trade Type:</label>
+            <select name="type">
+                <option value="BUY">Buy</option>
+                <option value="SELL">Sell</option>
+            </select>
+
+            <!-- 交易方式 -->
+            <label for="trade_category">Trade Category:</label>
+            <select name="trade_category">
+                <option value="CASH">現股</option>
+            </select>
+
+            <!-- 盤別 -->
+            <label for="market_session">Market Session:</label>
+            <select name="market_session">
+                <option value="REGULAR">普通</option>
+            </select>
+
+            <!-- 價格 -->
+            <label for="price">Price:</label>
+            <input type="number" step="0.01" name="price" required value="{{ stock_info['current_price'] }}">
+
+            <!-- 數量 -->
+            <label for="quantity">Quantity:</label>
+            <input type="number" name="quantity" required placeholder="Enter quantity">
+
+            <!-- 提交交易 -->
+            <button type="submit" name="submit_trade" {% if not is_trading_time %} disabled {% endif %}>Submit Trade</button>
+            {% if not is_trading_time %}
+                <p style="color: red;">Currently not within trading hours. Trading is only allowed from 9:00 AM to 1:30 PM.</p>
+            {% endif %}
+        </form>
+    {% endif %}
+
     <a href="{{ url_for('account') }}">Back to Account</a>
 </body>
 </html>
