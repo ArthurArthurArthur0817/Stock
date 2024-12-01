@@ -1,64 +1,111 @@
+import yfinance as yf
 from db import get_connection
+
+def get_stock_info(stock_symbol):
+    """
+    獲取股票的基本資訊，僅處理台股代碼 (如 2330.TW)。
+    :param stock_symbol: 股票代碼（必須包含 .TW 後綴）
+    :return: (股票資訊字典, 錯誤訊息)
+    """
+    try:
+        # 使用 yfinance 獲取股票資訊
+        stock = yf.Ticker(stock_symbol)
+        info = stock.info
+
+        # 構建股票資訊字典
+        stock_info = {
+            "symbol": stock_symbol.split('.')[0],  # 提取股票代碼（去除 ".TW"）
+            "name": info.get("longName"),         # 股票名稱
+            "sector": info.get("sector"),         # 所屬行業
+            "market_cap": info.get("marketCap"),  # 市值
+            "current_price": info.get("currentPrice"),  # 目前股價
+        }
+
+        # 驗證是否缺少必要的欄位資訊
+        missing_fields = [key for key, value in stock_info.items() if value is None]
+        if missing_fields:
+            return None, f"Some stock information is missing: {', '.join(missing_fields)}."
+
+        return stock_info, None  # 回傳股票資訊與無錯誤訊息
+    except Exception as e:
+        # 若有錯誤，回傳錯誤訊息
+        return None, f"Error fetching stock info: {e}"
 
 def process_trade(user_id, stock, quantity, price, trade_type):
     """
-    執行股票交易邏輯，包含買入和賣出。
-    :param user_id: 當前用戶ID
-    :param stock: 股票名稱
+    處理交易功能，包括買入與賣出股票。
+    :param user_id: 使用者 ID
+    :param stock: 股票代碼
     :param quantity: 交易數量
-    :param price: 單價
+    :param price: 交易價格
     :param trade_type: 交易類型 ('BUY' 或 'SELL')
-    :return: 成功返回 True，失敗返回 False
+    :return: (是否成功, 錯誤或成功訊息)
     """
     try:
+        # 建立資料庫連線與游標
         connection = get_connection()
         cursor = connection.cursor()
 
-        if trade_type == 'BUY':
-            total_cost = quantity * price
-            # 確認餘額是否足夠
+        if trade_type == 'BUY':  # 買入交易
+            total_cost = quantity * price  # 總花費計算
             cursor.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
-            balance = cursor.fetchone()[0]
-            if balance < total_cost:
-                return False
+            balance_result = cursor.fetchall()
+            balance = balance_result[0][0] if balance_result else None
 
-            # 更新用戶餘額
+            if balance is None:  # 檢查使用者是否存在
+                return False, "User not found."
+
+            if balance < total_cost:  # 檢查餘額是否足夠
+                return False, "Insufficient balance to complete the transaction."
+
+            # 扣除使用者餘額
             cursor.execute("UPDATE users SET balance = balance - %s WHERE id = %s", (total_cost, user_id))
-            # 更新或插入持有股票
+            # 更新或新增持股數量
             cursor.execute(
                 "INSERT INTO portfolios (user_id, stock, quantity) VALUES (%s, %s, %s) "
                 "ON DUPLICATE KEY UPDATE quantity = quantity + %s",
                 (user_id, stock, quantity, quantity)
             )
-        elif trade_type == 'SELL':
-            # 確認持有股票數量是否足夠
+
+        elif trade_type == 'SELL':  # 賣出交易
             cursor.execute("SELECT quantity FROM portfolios WHERE user_id = %s AND stock = %s", (user_id, stock))
-            current_quantity = cursor.fetchone()
-            if not current_quantity or current_quantity[0] < quantity:
-                return False
+            quantity_result = cursor.fetchall()
+            current_quantity = quantity_result[0][0] if quantity_result else None
 
-            total_earnings = quantity * price
-            # 更新用戶餘額
+            if current_quantity is None or current_quantity < quantity:  # 檢查是否有足夠持股
+                return False, "Insufficient stock quantity to complete the transaction."
+
+            total_earnings = quantity * price  # 總收入計算
+            # 更新使用者餘額
             cursor.execute("UPDATE users SET balance = balance + %s WHERE id = %s", (total_earnings, user_id))
-            # 更新持有股票數量
-            cursor.execute(
-                "UPDATE portfolios SET quantity = quantity - %s WHERE user_id = %s AND stock = %s",
-                (quantity, user_id, stock)
-            )
-        else:
-            return False
 
-        # 記錄交易
+            new_quantity = current_quantity - quantity
+            if new_quantity == 0:  # 若全部賣出則刪除記錄
+                cursor.execute("DELETE FROM portfolios WHERE user_id = %s AND stock = %s", (user_id, stock))
+            else:  # 否則更新剩餘數量
+                cursor.execute(
+                    "UPDATE portfolios SET quantity = %s WHERE user_id = %s AND stock = %s",
+                    (new_quantity, user_id, stock)
+                )
+
+        else:
+            return False, "Invalid trade type. Must be 'BUY' or 'SELL'."  # 檢查交易類型是否有效
+
+        # 記錄交易到交易表
         cursor.execute(
             "INSERT INTO transactions (user_id, stock, quantity, price, type) VALUES (%s, %s, %s, %s, %s)",
             (user_id, stock, quantity, price, trade_type)
         )
-        connection.commit()
-        return True
+        connection.commit()  # 提交交易
+        return True, "Transaction completed successfully."
+
     except Exception as e:
-        print(f"Error in process_trade: {e}")
-        return False
+        # 捕捉例外並回傳錯誤訊息
+        print(f"Error in process_trade for user {user_id}, stock {stock}: {e}")
+        return False, f"Error processing trade: {e}"
+
     finally:
+        # 確保游標與連線被正確關閉
         if 'cursor' in locals():
             cursor.close()
         if 'connection' in locals():
