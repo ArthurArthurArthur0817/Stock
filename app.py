@@ -51,6 +51,11 @@ def register():
                 connection.close()
     return render_template('register.html')
 
+
+
+
+
+
 # 用戶帳戶頁面
 @app.route('/account')
 def account():
@@ -80,9 +85,19 @@ def account():
         """, (session['user_id'],))
         stocks = cursor.fetchall()
         
-        if not stocks:
-            flash('No stocks found in your portfolio.')
+        # 獲取 portfolios 表中的數據
+        cursor.execute("SELECT * FROM portfolios WHERE user_id = %s", (session['user_id'],))
+        portfolios = cursor.fetchall()
+
+        # 為每支股票添加即時價格
+        for portfolio in portfolios:
+            stock_symbol = portfolio['stock']
+            stock_info, error = get_stock_info(stock_symbol)
+            portfolio['price'] = stock_info['current_price'] if stock_info else None
+            
+            
         
+            
     except Exception as e:
         flash(f"An error occurred: {str(e)}")
         return redirect(url_for('account'))
@@ -93,7 +108,7 @@ def account():
         if 'connection' in locals():
             connection.close()
     
-    return render_template('account.html', balance=user_balance, stocks=stocks)
+    return render_template('account.html', balance=user_balance, stocks=stocks, portfolios=portfolios)
 
 
 @app.route('/trade', methods=['GET', 'POST'])
@@ -162,6 +177,21 @@ def trade():
                 flash(f"Price mismatch. Current price: {current_price}. Your set price: {user_price}")
     
     return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
+
+
+
+@app.route('/transaction')
+def transaction():
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    # 獲取 transaction 表中的數據
+    cursor.execute("SELECT stock, quantity, price, transaction_time, type FROM transactions")
+    transactions = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    return render_template('transaction.html', transactions=transactions)
 
 if __name__ == '__main__':
     app.run(debug=True)
