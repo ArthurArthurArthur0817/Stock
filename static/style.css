@@ -138,7 +138,8 @@ a:hover {
 
 /* 為 .btn 添加按鈕樣式 */
 .btn {
-    display: inline-block; /* 確保它像按鈕一樣是塊狀元素 */
+    display: block; /* 將按鈕設為塊狀元素 */
+    margin: 0 auto; /* 上下邊距為 0，左右自動對齊 */
     padding: 10px 20px; /* 內邊距 */
     background-color: #007acc; /* 按鈕背景色 */
     color: #ffffff; /* 按鈕文字顏色 */
@@ -146,9 +147,22 @@ a:hover {
     border: none; /* 移除默認邊框 */
     border-radius: 5px; /* 圓角 */
     font-size: 1rem; /* 字體大小 */
+    width: 140px; /* 固定寬度 */
+    margin: 50px auto 0; /* 100px 上邊距，置中 */
     cursor: pointer; /* 鼠標移動到按鈕時顯示手型 */
     text-decoration: none; /* 移除超連結下劃線 */
     transition: background-color 0.3s ease; /* 添加背景變化過渡效果 */
+}
+
+.stock-info {
+    display: block;
+    width: 50%; /* 區塊寬度，根據需求調整 */
+    margin: 0 auto; /* 水平置中 */
+    text-align: left; /* 文字靠左對齊 */
+    padding: 20px; /* 添加內邊距，讓內容看起來不擁擠 */
+    border: 1px solid #ddd; /* 可選：添加邊框讓區塊更突出 */
+    border-radius: 5px; /* 可選：圓角效果 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 可選：陰影效果 */
 }
 
 .btn:hover {
