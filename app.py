@@ -116,68 +116,51 @@ def trade():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    stock_info = None  # 用來存放查詢結果
-    current_price = None  # 目前價格
+    stock_info = None
+    current_price = None
 
-    # 確定交易時間（9:00 AM 到 1:30 PM）
     now = datetime.datetime.now()
-    start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
     end_time = now.replace(hour=23, minute=30, second=0, microsecond=0)
     is_trading_time = start_time <= now <= end_time
 
     if request.method == 'POST':
-        if 'get_stock_info' in request.form:  # 查詢股票資訊
-            stock_symbol = request.form['stock'].strip()  # 去除多餘空白
-            
-            # 檢查股票代碼是否為 4 位數字
-            if not stock_symbol.isdigit() or len(stock_symbol) != 4:
-                flash("Stock symbol must be a 4-digit code representing a Taiwan stock.")
+        if 'get_stock_info' in request.form:
+            stock_symbol = request.form['stock'].strip()
+            # 更新股票代碼驗證：允許 4、5 或 6 位數字
+            if not stock_symbol.isdigit() or (len(stock_symbol) not in [4, 5, 6]):
+                flash("Stock symbol must be a 4, 5, or 6-digit code representing a Taiwan stock.")
                 return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time)
-            
-            # 將股票代碼轉換為 Yahoo Finance 格式
+
             stock_symbol = f"{stock_symbol}.TW"
-            
-            # 取得股票資訊
             stock_info, error_message = get_stock_info(stock_symbol)
             if error_message:
                 flash(error_message)
                 return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time)
 
-        elif 'submit_trade' in request.form:  # 提交交易
+        elif 'submit_trade' in request.form:
             stock_symbol = request.form['stock'].strip()
-            user_price = float(request.form['price'])  # 使用者設定的價格
+            user_price = float(request.form['price'])
             quantity = int(request.form['quantity'])
             trade_type = request.form['type']
+            current_price = float(request.form['current_price'])
 
-            # 確保股票代碼為有效格式
-            if not stock_symbol.endswith(".TW"):
-                stock_symbol = f"{stock_symbol}.TW"
-
-            # 驗證交易時間
             if not is_trading_time:
                 flash("Currently not within trading hours. Trading is only allowed from 9:00 AM to 1:30 PM.")
                 return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
 
-            # 再次檢查股票資訊是否存在
-            stock_info, error_message = get_stock_info(stock_symbol)
-            if error_message:
-                flash(error_message)
-                return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time)
-
-            current_price = stock_info["current_price"]
-
-            # 驗證價格是否與使用者輸入匹配
-            if user_price == current_price:
-                # 處理交易邏輯
-                if process_trade(session['user_id'], stock_symbol, quantity, user_price, trade_type):
-                    flash("Transaction completed successfully.")
-                else:
-                    flash("Transaction failed. Please check your input or balance.")
-            else:
+            price_tolerance = 0.01
+            if not (current_price * (1 - price_tolerance) <= user_price <= current_price * (1 + price_tolerance)):
                 flash(f"Price mismatch. Current price: {current_price}. Your set price: {user_price}")
-    
-    return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
+                return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
 
+            success, message = process_trade(session['user_id'], stock_symbol, quantity, user_price, trade_type)
+            if success:
+                flash("Transaction completed successfully.")
+            else:
+                flash(message)
+
+    return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
 
 
 @app.route('/transaction')
