@@ -21,16 +21,18 @@
     {% endwith %}
 
     <!-- 股票資訊顯示 -->
-    {% if stock_info %}
-        <h2>Stock Information</h2>
-        <p><strong>Name:</strong> {{ stock_info['name'] }}</p>
-        <p><strong>Symbol:</strong> {{ stock_info['symbol'] }}</p>
-        <p><strong>Sector:</strong> {{ stock_info['sector'] }}</p>
-        <p><strong>Market Cap:</strong> {{ stock_info['market_cap'] }}</p>
-        <p><strong>Current Price:</strong> {{ stock_info['current_price'] }}</p>
-    {% else %}
-        <p>No stock information available. Please search for a stock symbol.</p>
-    {% endif %}
+    <div class="stock-info">
+        {% if stock_info %}
+            <h2>Stock Information</h2>
+            <p><strong>Name:</strong> {{ stock_info['name'] }}</p>
+            <p><strong>Symbol:</strong> {{ stock_info['symbol'] }}</p>
+            <p><strong>Sector:</strong> {{ stock_info['sector'] }}</p>
+            <p><strong>Market Cap:</strong> {{ stock_info['market_cap'] }}</p>
+            <p><strong>Current Price:</strong> {{ stock_info['current_price'] }}</p>
+        {% else %}
+            <p>No stock information available. Please search for a stock symbol.</p>
+        {% endif %}
+    </div>
 
     <!-- 股票查詢表單 -->
     <form method="POST">
@@ -44,6 +46,7 @@
     {% if stock_info %}
         <form method="POST">
             <input type="hidden" name="stock" value="{{ stock_info['symbol'] }}">
+            <input type="hidden" name="current_price" value="{{ stock_info['current_price'] }}">
             
             <!-- 交易類型 -->
             <label for="type">Trade Type:</label>
@@ -80,6 +83,6 @@
         </form>
     {% endif %}
 
-    <a href="{{ url_for('account') }}">Back to Account</a>
+    <a href="{{ url_for('account') }}" class="btn">Back to Account</a>
 </body>
 </html>
