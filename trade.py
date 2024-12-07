@@ -68,28 +68,35 @@ def process_trade(user_id, stock, quantity, price, trade_type):
             )
 
         elif trade_type == 'SELL':  # 賣出交易
+            # 查詢使用者是否擁有該股票
             cursor.execute("SELECT quantity FROM portfolios WHERE user_id = %s AND stock = %s", (user_id, stock))
             quantity_result = cursor.fetchall()
-            current_quantity = quantity_result[0][0] if quantity_result else None
+            
+            # 取得現有持股數量，若無記錄則設為 0
+            current_quantity = quantity_result[0][0] if quantity_result else 0
 
-            if current_quantity is None or current_quantity < quantity:  # 檢查是否有足夠持股
+            # 檢查是否有足夠持股
+            if current_quantity <= 0 or current_quantity < quantity:  
                 return False, "Insufficient stock quantity to complete the transaction."
 
-            total_earnings = quantity * price  # 總收入計算
+            # 計算總收入
+            total_earnings = quantity * price
+
             # 更新使用者餘額
             cursor.execute("UPDATE users SET balance = balance + %s WHERE id = %s", (total_earnings, user_id))
 
+            # 計算剩餘數量
             new_quantity = current_quantity - quantity
-            if new_quantity == 0:  # 若全部賣出則刪除記錄
+            if new_quantity == 0:  # 如果全部賣出，刪除記錄
                 cursor.execute("DELETE FROM portfolios WHERE user_id = %s AND stock = %s", (user_id, stock))
             else:  # 否則更新剩餘數量
                 cursor.execute(
                     "UPDATE portfolios SET quantity = %s WHERE user_id = %s AND stock = %s",
                     (new_quantity, user_id, stock)
                 )
-
         else:
             return False, "Invalid trade type. Must be 'BUY' or 'SELL'."  # 檢查交易類型是否有效
+
 
         # 記錄交易到交易表
         cursor.execute(
