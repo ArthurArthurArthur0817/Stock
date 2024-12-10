@@ -1,4 +1,7 @@
 # Stock
+<img width="761" alt="image" src="https://github.com/user-attachments/assets/e28f491d-0c30-4ca6-ad30-019debcacd5b">
+
+
 
 ## MySQL
 
