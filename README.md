@@ -56,6 +56,8 @@ CREATE TABLE transactions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+
+
 UPDATE portfolios p1
 JOIN (
     SELECT user_id, stock, SUM(quantity) AS total_quantity
@@ -64,11 +66,17 @@ JOIN (
 ) p2 ON p1.user_id = p2.user_id AND p1.stock = p2.stock
 SET p1.quantity = p2.total_quantity;
 
+
+
 DELETE p1
 FROM portfolios p1
 JOIN portfolios p2
 ON p1.user_id = p2.user_id AND p1.stock = p2.stock
 WHERE p1.id > p2.id;
+
+
+
+SET SQL_SAFE_UPDATES=0;
 
 ```
 
