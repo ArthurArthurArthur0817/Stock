@@ -19,7 +19,7 @@ def login():
             user = cursor.fetchone()
             if user:
                 session['user_id'] = user['id']
-                return redirect(url_for('account'))
+                return redirect(url_for('main'))
             else:
                 flash("Invalid username or password.")
         finally:
@@ -40,7 +40,7 @@ def register():
             cursor = connection.cursor()
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
             connection.commit()
-            flash("Registration successful. Please log in.")
+            #flash("Registration successful. Please log in.")
             return redirect(url_for('login'))
         except Exception as e:
             flash(f"Error: {e}")
@@ -52,6 +52,11 @@ def register():
     return render_template('register.html')
 
 
+@app.route('/main')
+def main():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('main.html')
 
 
 
@@ -109,6 +114,8 @@ def account():
             connection.close()
     
     return render_template('account.html', balance=user_balance, stocks=stocks, portfolios=portfolios)
+
+
 
 
 @app.route('/trade', methods=['GET', 'POST'])
@@ -175,6 +182,16 @@ def transaction():
     cursor.close()
     connection.close()
     return render_template('transaction.html', transactions=transactions)
+
+
+
+@app.route('/teach')
+def teach():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('teach.html')
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
