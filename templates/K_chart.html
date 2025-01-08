@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candlestick chart</title>
+    <link rel="stylesheet" href="/static/style.css"> <!-- 引入自訂樣式 -->
+    <style>
+        /* table {
+            border-collapse: 100px;
+            border-spacing: 50px;
+            background-color: aquamarine;
+        } */
+    </style>
+</head>
+<center>
+<body> 
+    <h1>K線組合型態</h1>  
+    <hr>       
+
+    <div>
+    <h2>陽線</h2>
+    <table width="1179" border="1">
+      <tr>
+        <td colspan="2"><h3 align="center">大陽線</h3></td>
+        <td colspan="2"><h3 align="center">小陽線</h3></td>
+      </tr>
+      <tr>
+        <td width="115"><img src="picture/螢幕擷取畫面 2025-01-08 191008.png" width="55" height="187"></td>
+        <td width="400"> 開盤價即為最低價，隨後股價一路上攻，最後收在股價最高點，代表買盤力道強勁。 </td>
+        <td width="115"><img src="picture/螢幕擷取畫面 2025-01-08 191346.png" width="58" height="192"></td>
+        <td width="400">股價跌到低點時有買盤支撐，但漲到高點又遇到賣壓，最終由多方略勝一籌，推升股價呈現上漲狀態，K 線出現這樣的型態，通常是一種反轉訊號，如果在大漲後出現，表示高檔震盪﹔反之，如果在大跌後出現，可能表示股價已觸底，未來股價有望反彈。 </td>
+      </tr>
+      <tr>
+        <td colspan="2"><h3 align="center">光頭陽線</h3></td>
+        <td colspan="2"><h3 align="center">光腳陽線</h3></td>
+      </tr>
+      <tr>
+        <td><img src="picture/螢幕擷取畫面 2025-01-08 191635.png" width="65" height="169"></td>
+        <td> 開盤後股價一度下跌，但因有買盤支撐，推升股價一路走升，最終收在最高價位，當下影線越長，代表反彈的力道越大，屬於多頭上漲的訊號。 </td>
+        <td><img src="picture/螢幕擷取畫面 2025-01-08 191723.png" width="63" height="203"></td>
+        <td> 開盤後股價一度衝至最高點，但在高檔區遭遇賣壓，最終由多方略勝一籌，收盤價仍高於開盤價，當上影線越長，代表賣盤力道較強、拉回程度越大。 </td>
+      </tr>
+      <tr>
+        <td colspan="2"><h3 align="center"> 陽線錘子 </h3></td>
+        <td colspan="2"><h3 align="center">倒線錘子</h3></td>
+      </tr>
+      <tr>
+        <td><img src="picture/陽錘.png" width="65" height="169"></td>
+        <td> 股價大跌之後，空方力道減弱，隨後買盤一路買到最高價作收，如果在長期下跌的情況下，看到這樣的型態，代表買盤已積累一段時間後開始釋放，可以視為股價底部支撐的訊號。</td>
+        <td><img src="picture/倒陽錘.png" width="63" height="203"></td>
+        <td> 股價大漲之後，多方力道減弱，隨後股價被賣盤拉回，但最終由多方略勝一籌，收盤價仍高於開盤價，上影線的長度表示拉回的程度，上影線越長，代表賣壓越大。</td>
+      </tr>
+    </table>
+    </div>
+
+
+    <!-- 返回教學頁面按鈕 -->
+    <a href="{{ url_for('teach') }}" class="btn">Back to Teach Page</a>
+</body>
+</center>
+</html>
