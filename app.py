@@ -191,6 +191,23 @@ def teach():
         return redirect(url_for('login'))
     return render_template('teach.html')
 
+@app.route('/basic')
+def basic():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('basic.html')
+
+@app.route('/market')
+def market():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('market.html')
+
+@app.route('/trans_related')
+def trans_related():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('trans_related.html')
 
 
 if __name__ == '__main__':
