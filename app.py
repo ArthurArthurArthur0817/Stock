@@ -209,6 +209,12 @@ def trans_related():
         return redirect(url_for('login'))
     return render_template('trans_related.html')
 
+@app.route('/risk')
+def risk():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('risk.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
