@@ -215,6 +215,18 @@ def risk():
         return redirect(url_for('login'))
     return render_template('risk.html')
 
+@app.route('/analysis_tools')
+def analysis_tools():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('analysis_tools.html')
+
+@app.route('/K_chart')
+def K_chart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('K_chart.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
