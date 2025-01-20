@@ -59,7 +59,7 @@ def fetch_and_analyze_channel_breakout(stock_ticker, start_date, end_date, perio
 # 使用範例
 if __name__ == "__main__":
     stock_ticker = "2330.TW"  # 指定股票代碼
-    start_date = "2024-01-01"  # 開始日期
-    end_date = "2025-1-17"    # 結束日期
+    start_date = "2024-09-12"  # 開始日期
+    end_date = "2024-09-30"    # 結束日期
 
     fetch_and_analyze_channel_breakout(stock_ticker, start_date, end_date)
