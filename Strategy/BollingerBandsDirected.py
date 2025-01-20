@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import talib  # 引入 TA-Lib
 
-def fetch_and_analyze_bollinger_bands(stock_ticker, start_date, end_date, window=5, num_std_dev=1, period=20):
+def fetch_and_analyze_bollinger_bands(stock_ticker, start_date, end_date, window=5, num_std_dev=1, period=5):
     
     # 抓取股票數據
     data = yf.download(stock_ticker, start=start_date, end=end_date)
@@ -63,6 +63,6 @@ def fetch_and_analyze_bollinger_bands(stock_ticker, start_date, end_date, window
 # 使用範例
 if __name__ == "__main__":
     stock_ticker = "2330.TW"  # 指定股票代碼
-    start_date = "2024-01-01"  # 開始日期
-    end_date = "2024-12-30"    # 結束日期
+    start_date = "2024-09-12"  # 開始日期
+    end_date = "2024-09-30"    # 結束日期
     fetch_and_analyze_bollinger_bands(stock_ticker, start_date, end_date)
