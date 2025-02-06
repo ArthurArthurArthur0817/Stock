@@ -1,7 +1,7 @@
 import yfinance as yf
 import numpy as np
 import pandas as pd
-import talib  # 引入 TA-Lib
+import talib  
 
 def fetch_and_analyze_bollinger_bands(stock_ticker, start_date, end_date, initial_capital=100000, window=5, num_std_dev=1, period=5):
     
