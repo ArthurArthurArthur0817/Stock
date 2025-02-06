@@ -191,41 +191,17 @@ def teach():
         return redirect(url_for('login'))
     return render_template('teach.html')
 
-@app.route('/basic')
-def basic():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('basic.html')
-
-@app.route('/market')
-def market():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('market.html')
-
-@app.route('/trans_related')
-def trans_related():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('trans_related.html')
-
 @app.route('/risk')
 def risk():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('risk.html')
 
-@app.route('/analysis_tools')
-def analysis_tools():
+@app.route('/roi')
+def roi():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('analysis_tools.html')
-
-@app.route('/K_chart')
-def K_chart():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('K_chart.html')
+    return render_template('roi.html')
 
 
 if __name__ == '__main__':
