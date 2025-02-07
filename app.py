@@ -6,6 +6,19 @@ import datetime
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
+# ✅ 計算風險分數的函式
+def calculate_risk_score(answers):
+    """計算使用者的投資風險評估分數"""
+    score = sum(map(int, answers.values()))  # 將所有選項數值加總
+
+    # 根據分數分類風險類型
+    if score <= 10:
+        return "保守型投資者", -1
+    elif 11 <= score <= 18:
+        return "穩健型投資者", 0
+    else:
+        return "積極型投資者", 1
+        
 # 登入頁面
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -196,6 +209,24 @@ def risk():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('risk.html')
+
+@app.route('/result', methods=['POST'])
+def result():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    answers = request.form
+    stock_type = request.form.get('stock_type', "未選擇")
+
+    risk_type, risk_value = calculate_risk_score(answers)
+
+    try:
+        with open("risk_type.txt", "w", encoding="utf-8") as file:
+            file.write(f"{stock_type},{risk_value}\n")
+    except Exception as e:
+        print(f"寫入 risk_type.txt 失敗: {e}")
+
+    return render_template("risk_result.html", risk_type=risk_type)
 
 @app.route('/roi')
 def roi():
