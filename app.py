@@ -6,7 +6,7 @@ import datetime
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# ✅ 計算風險分數的函式
+# 計算風險分數的函式
 def calculate_risk_score(answers):
     """計算使用者的投資風險評估分數"""
     score = sum(map(int, answers.values()))  # 將所有選項數值加總
@@ -224,7 +224,7 @@ def result():
         with open("risk_type.txt", "w", encoding="utf-8") as file:
             file.write(f"{stock_type},{risk_value}\n")
     except Exception as e:
-        print(f"寫入 risk_type.txt 失敗: {e}")
+        'print(f"寫入 risk_type.txt 失敗: {e}")'
 
     return render_template("risk_result.html", risk_type=risk_type)
 
