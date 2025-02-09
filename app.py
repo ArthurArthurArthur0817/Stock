@@ -1,7 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from db import get_connection
 from trade import get_stock_info, process_trade
 import datetime
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import io
+import base64
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -227,6 +233,107 @@ def result():
         'print(f"寫入 risk_type.txt 失敗: {e}")'
 
     return render_template("risk_result.html", risk_type=risk_type)
+
+
+
+# 計算 CAGR
+def calculate_cagr(stock_code):
+    stock = yf.Ticker(stock_code)
+    df = stock.history(period="max")  # 取得所有歷史數據
+
+    if df.empty:
+        return None  # 沒有數據則回傳 None
+
+    start_price = df["Close"].iloc[0]  # 最早的收盤價
+    end_price = df["Close"].iloc[-1]  # 最新的收盤價
+    years = (df.index[-1] - df.index[0]).days / 365  # 計算經過的年數
+    cagr = ((end_price / start_price) ** (1 / years)) - 1  # CAGR 計算公式
+    return cagr * 100  # 轉成百分比
+
+# 預測未來收益
+def predict_future_value(initial_investment, cagr, months):
+    years = months / 12  # 換算成年
+    final_value = initial_investment * ((1 + cagr / 100) ** years)  # 預測最終價值
+    profit = final_value - initial_investment  # 計算總收益
+    return final_value, profit
+
+# 將月份轉換為 yfinance 可接受的 period 格式
+def get_valid_period(months):
+    if months <= 1:
+        return "1mo"
+    elif months <= 3:
+        return "3mo"
+    elif months <= 6:
+        return "6mo"
+    elif months <= 12:
+        return "1y"
+    elif months <= 24:
+        return "2y"
+    elif months <= 60:
+        return "5y"
+    elif months <= 120:
+        return "10y"
+    else:
+        return "max"
+
+# 繪製 K 線圖
+def plot_comparison(stock_code, months):
+    period = get_valid_period(months)
+    stock = yf.Ticker(stock_code)
+    market = yf.Ticker("^TWII")  # 台灣加權指數
+
+    df_stock = stock.history(period=period)
+    df_market = market.history(period=period)
+
+    print(df_stock.head())  # 檢查是否有資料
+    print(df_market.head())  # 檢查是否有資料
+
+    if df_stock.empty or df_market.empty:
+        return None  # 沒數據就不畫圖
+
+    df_stock["Return"] = df_stock["Close"].pct_change().cumsum() * 100
+    df_market["Return"] = df_market["Close"].pct_change().cumsum() * 100
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(df_stock.index, df_stock["Return"], label=f"{stock_code} (%)", color="blue")
+    plt.plot(df_market.index, df_market["Return"], label="^TWII (%)", color="red")
+    plt.xlabel("Period")
+    plt.ylabel("Price change (%)")
+    plt.title(f"{stock_code} vs ^TWII")
+    plt.legend()
+    plt.grid()
+
+    img = io.BytesIO()
+    plt.savefig(img, format="png")
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode()
+    plt.close()
+    return f"data:image/png;base64,{plot_url}"
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/calculate", methods=["POST"])
+def calculate():
+    data = request.json
+    stock_code = data.get("stock_code")
+    initial_investment = float(data.get("initial_investment"))
+    months = int(data.get("months"))
+
+    cagr = calculate_cagr(stock_code)
+    if cagr is None:
+        return jsonify({"error": "股票代號無效或無數據"})
+
+    final_value, profit = predict_future_value(initial_investment, cagr, months)
+    plot_url = plot_comparison(stock_code, months)
+
+    return jsonify({
+        "cagr": round(cagr, 2),
+        "final_value": round(final_value, 2),
+        "profit": round(profit, 2),
+        "plot_url": plot_url
+    })
 
 @app.route('/roi')
 def roi():
