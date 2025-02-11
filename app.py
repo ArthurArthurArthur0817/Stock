@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from db import get_connection
 from trade import get_stock_info, process_trade
+from news import fetch_news
 import datetime
 import yfinance as yf
 import pandas as pd
@@ -340,6 +341,18 @@ def roi():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('roi.html')
+
+#相關新聞
+# (目前以台積電為例)
+@app.route('/news')
+def news():
+    """ 顯示新聞頁面 """
+    news_list = fetch_news()  # 獲取新聞
+
+    if not news_list:
+        return render_template('news.html', news_list=[], error="⚠️ 目前沒有可用新聞，請稍後再試！")
+
+    return render_template('news.html', news_list=news_list)
 
 
 if __name__ == '__main__':
