@@ -9,6 +9,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 import base64
+#==============================================================
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from db import get_connection
+from trade import get_stock_info, process_trade
+
+from strategies import rsi  # 確保 strategies 內有 rsi.py
+import subprocess
+import os
+import datetime
+import importlib
+
+from simulation import plot_stock_data, get_random_stock
+
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -136,58 +150,6 @@ def account():
     return render_template('account.html', balance=user_balance, stocks=stocks, portfolios=portfolios)
 
 
-
-
-@app.route('/trade', methods=['GET', 'POST'])
-def trade():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    stock_info = None
-    current_price = None
-
-    now = datetime.datetime.now()
-    start_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
-    end_time = now.replace(hour=23, minute=30, second=0, microsecond=0)
-    is_trading_time = start_time <= now <= end_time
-
-    if request.method == 'POST':
-        if 'get_stock_info' in request.form:
-            stock_symbol = request.form['stock'].strip()
-            # 更新股票代碼驗證：允許 4、5 或 6 位數字
-            if not stock_symbol.isdigit() or (len(stock_symbol) not in [4, 5, 6]):
-                flash("Stock symbol must be a 4, 5, or 6-digit code representing a Taiwan stock.")
-                return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time)
-
-            stock_symbol = f"{stock_symbol}.TW"
-            stock_info, error_message = get_stock_info(stock_symbol)
-            if error_message:
-                flash(error_message)
-                return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time)
-
-        elif 'submit_trade' in request.form:
-            stock_symbol = request.form['stock'].strip()
-            user_price = float(request.form['price'])
-            quantity = int(request.form['quantity'])
-            trade_type = request.form['type']
-            current_price = float(request.form['current_price'])
-
-            if not is_trading_time:
-                flash("Currently not within trading hours. Trading is only allowed from 9:00 AM to 1:30 PM.")
-                return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
-
-            price_tolerance = 0.01
-            if not (current_price * (1 - price_tolerance) <= user_price <= current_price * (1 + price_tolerance)):
-                flash(f"Price mismatch. Current price: {current_price}. Your set price: {user_price}")
-                return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
-
-            success, message = process_trade(session['user_id'], stock_symbol, quantity, user_price, trade_type)
-            if success:
-                flash("Transaction completed successfully.")
-            else:
-                flash(message)
-
-    return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time)
 
 
 @app.route('/transaction')
@@ -336,6 +298,80 @@ def calculate():
         "plot_url": plot_url
     })
 
+
+@app.route('/trade', methods=['GET', 'POST'])
+def trade():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    stock_info = session.get("stock_info")  # 嘗試從 session 取回上次選擇的股票
+    current_price = None
+    strategy_result = None  # **新增變數來儲存策略結果**
+
+    now = datetime.datetime.now()
+    start_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    end_time = now.replace(hour=13, minute=30, second=0, microsecond=0)
+    is_trading_time = start_time <= now <= end_time
+
+    if request.method == 'POST':
+        if 'get_stock_info' in request.form:
+            stock_symbol = request.form['stock'].strip()
+            if not stock_symbol.isdigit() or (len(stock_symbol) not in [4, 5, 6]):
+                flash("Stock symbol must be a 4, 5, or 6-digit code representing a Taiwan stock.")
+                return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time, strategy_result=None)
+
+            stock_symbol = f"{stock_symbol}.TW"
+            stock_info, error_message = get_stock_info(stock_symbol)
+            if error_message:
+                flash(error_message)
+                return render_template('trade.html', stock_info=None, is_trading_time=is_trading_time, strategy_result=None)
+
+            session["stock_info"] = stock_info  # **將股票資訊存入 session**
+        
+        elif 'apply_strategy' in request.form:
+            selected_strategy = request.form['strategy']
+            investment_amount = request.form.get('investment_amount', 0)  # 取得投資金額
+            strategy_module = f"strategies.{selected_strategy}"
+
+            if stock_info and isinstance(stock_info, dict) and 'symbol' in stock_info:
+                try:
+                    strategy = importlib.import_module(strategy_module)
+                    strategy_result = strategy.run(stock_info['symbol'] + ".TW", float(investment_amount))  # **傳入投資金額**
+                except ModuleNotFoundError:
+                    flash("Strategy module not found.")
+                except AttributeError:
+                    flash("Strategy module does not contain a 'run' function.")
+            else:
+                flash("Stock information is not available or incomplete.")
+
+    return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time, strategy_result=strategy_result)
+
+
+@app.route('/ai_analysis', methods=['POST'])
+def ai_analysis():
+    txt_path = "analysis_results.txt"
+
+    # 檢查分析結果檔案是否存在
+    if not os.path.exists(txt_path):
+        return jsonify({"analysis_result": "❌ 找不到分析結果檔案！"})
+
+    # 執行 Gemini 分析
+    process = subprocess.run(["python", "gemini.py"], capture_output=True, text=True)
+
+    # 如果執行失敗，返回錯誤訊息
+    if process.returncode != 0:
+        error_msg = f"⚠️ 執行 gemini.py 失敗：{process.stderr}"
+        print(error_msg)
+        return jsonify({"analysis_result": error_msg})
+
+    # 取得 Gemini 分析結果
+    analysis_result = process.stdout
+    print(f"✅ AI 分析結果：\n{analysis_result}")
+
+    # 以 JSON 格式返回
+    return jsonify({"analysis_result": analysis_result})
+
+
 @app.route('/roi')
 def roi():
     if 'user_id' not in session:
@@ -353,6 +389,33 @@ def news():
         return render_template('news.html', news_list=[], error="⚠️ 目前沒有可用新聞，請稍後再試！")
 
     return render_template('news.html', news_list=news_list)
+
+
+@app.route('/simulation')
+def simulation():
+    if 'stock_code' not in session:
+        session['stock_code'] = get_random_stock()  # 隨機選一支股票
+    session['start_index'] = 0  # 初始 index
+
+    plot_path = plot_stock_data(session['stock_code'], session['start_index'])
+    if not plot_path:
+        return "無法獲取股票數據，請稍後再試"
+
+    return render_template('simulation.html', plot_path=plot_path, stock_code=session['stock_code'])
+
+@app.route('/next_day')
+def next_day():
+    """確保繪圖函數在 Flask 主線程內執行"""
+    with app.app_context():
+        session['start_index'] += 1
+        plot_path = plot_stock_data(session['stock_code'], session['start_index'])
+
+    if not plot_path:
+        return jsonify({'error': '已超出資料範圍'})
+
+    return jsonify({'plot_path': plot_path})
+
+
 
 
 if __name__ == '__main__':
