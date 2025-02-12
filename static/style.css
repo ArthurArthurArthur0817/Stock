@@ -251,3 +251,30 @@ a:hover {
     margin-bottom: 15px;
     border-radius: 5px;
 }
+
+/* 讓按鈕和結果區塊置中 */
+.analysis-container,
+#aiAnalysisBtn {
+    display: block;
+    text-align: center;
+    margin: 20px auto; /* 讓按鈕置中 */
+}
+
+/* 設定按鈕的大小、間距 */
+#aiAnalysisBtn {
+    background-color: #007bff; /* 藍色按鈕 */
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    width: fit-content; /* 讓按鈕寬度適應內容 */
+}
+
+/* 滑鼠懸停效果 */
+#aiAnalysisBtn:hover {
+    background-color: #0056b3;
+}
+
