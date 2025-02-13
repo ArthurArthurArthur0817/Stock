@@ -344,6 +344,12 @@ def trade():
 
     return render_template('trade.html', stock_info=stock_info, is_trading_time=is_trading_time, strategy_result=strategy_result)
 
+@app.route('/roi')
+def roi():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('roi.html')
+
 
 @app.route('/ai_analysis', methods=['POST'])
 def ai_analysis():
@@ -369,11 +375,63 @@ def ai_analysis():
     # 以 JSON 格式返回
     return jsonify({"analysis_result": analysis_result})
 
-@app.route('/roi')
-def roi():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('roi.html')
+
+@app.route("/save_question", methods=["POST"]) 
+def save_question(): 
+    data = request.get_json()
+    question = data.get("question", "").strip() if data else ""
+    print(f"收到請求數據: {request.data}")
+    print(f"解析 JSON: {request.get_json()}")
+
+    if not question:
+        return jsonify({"message": "問題不能為空"}), 400
+
+    try:
+        with open("question.txt", "a", encoding="utf-8") as f:
+            f.write(question + "\n")
+        return jsonify({"message": "問題已成功儲存！"})
+    except Exception as e:
+        return jsonify({"message": f"寫入失敗: {str(e)}"}), 500
+
+
+
+@app.route("/process_question", methods=["POST"])
+def process_question():
+    try:
+        # 🔹 強制 subprocess 以 UTF-8 讀取
+        result = subprocess.run(
+            ["python", "gemini_learn.py"], 
+            capture_output=True, 
+            text=True, 
+            encoding="utf-8"  # 🔹 確保 subprocess 讀取 UTF-8
+        )
+
+        # 🔹 印出 stdout 和 stderr 來偵錯
+        print("Gemini stdout:", result.stdout)
+        print("Gemini stderr:", result.stderr)
+
+        if result.returncode != 0:
+            return jsonify({"response": f"❌ Gemini 執行失敗：{result.stderr.strip()}"}), 500
+
+        # 讀取 learn.txt 的內容
+        learn_path = "learn.txt"
+        if not os.path.exists(learn_path):
+            return jsonify({"response": "❌ 找不到 learn.txt，請先執行 AI 分析！"}), 500
+
+        with open(learn_path, "r", encoding="utf-8") as f:
+            learn_content = f.read().strip()
+
+        print("📜 Learn.txt 內容：\n", learn_content)  # 🔹 顯示 learn.txt 內容到後端
+
+        return jsonify({"response": learn_content})
+
+    except Exception as e:
+        return jsonify({"response": f"❌ 處理問題時發生錯誤：{str(e)}"}), 500
+
+
+
+
+
 
 #相關新聞
 # (目前以台積電為例)
