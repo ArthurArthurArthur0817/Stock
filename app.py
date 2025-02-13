@@ -13,7 +13,7 @@ import base64
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from db import get_connection
 from trade import get_stock_info, process_trade
-from strategies import rsi  # 確保 strategies 內有 rsi.py
+from Strategies import rsi  # 確保 strategies 內有 rsi.py
 import subprocess
 import os
 import datetime
