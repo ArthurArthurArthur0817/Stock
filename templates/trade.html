@@ -109,19 +109,71 @@
         <pre id="analysis-text">🔹 尚未進行 AI 分析</pre>
     </div>
     
-    <!-- 引入 JavaScript -->
+    <!-- 使用者輸入區 (在 AI 分析結果下方) -->
+    <div id="user-response-container" style="display: none; text-align: center; margin-top: 20px;">
+        <h3>請輸入您的回答：</h3>
+        <textarea id="user-response" placeholder="請輸入您的回答..." style="width: 80%; height: 100px; padding: 5px;"></textarea>
+        <br>
+        <button id="submit-response">提交</button>
+    </div>
+    
+    <!-- JavaScript 處理 -->
     <script>
-    document.getElementById("aiAnalysisBtn").addEventListener("click", function() {
-        fetch("/ai_analysis", {
-            method: "POST",
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("analysis-text").textContent = data.analysis_result;
-        })
-        .catch(error => console.error("Error:", error));
-    });
+        document.getElementById("aiAnalysisBtn").addEventListener("click", function() {
+            fetch("/ai_analysis", {
+                method: "POST",
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("analysis-text").textContent = data.analysis_result;
+    
+                // 🔹 確保輸入框區塊存在，然後顯示
+                let responseContainer = document.getElementById("user-response-container");
+                if (responseContainer) {
+                    responseContainer.style.display = "block"; 
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    
+        document.getElementById("submit-response").addEventListener("click", function() {
+            let userResponse = document.getElementById("user-response").value.trim();
+    
+            if (userResponse === "") {
+                alert("❌ 請輸入您的回答！");
+                return;
+            }
+    
+            fetch("/save_question", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: userResponse })  
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);  
+                document.getElementById("user-response").value = "";  
+    
+                // 🔹 問題儲存成功後，呼叫 AI 分析
+                return fetch("/process_question", { method: "POST" });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("🔹 Gemini AI 回應:", data.response);  
+    
+                let aiResponseElement = document.getElementById("ai-response-text");
+                if (aiResponseElement) {
+                    aiResponseElement.textContent = data.response;  // ✅ 顯示 learn.txt 內容
+                } else {
+                    console.error("❌ 找不到 ai-response-text 元素！");
+                }
+            })
+            .catch(error => console.error("❌ Error:", error));
+        });
     </script>
+    
+        
+    
 
     
     
